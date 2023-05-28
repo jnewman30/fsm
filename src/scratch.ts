@@ -3,8 +3,8 @@ import {Machine} from "./fsm/machine";
 const drinks = {
     beer: { name: 'beer', type: 'alcohol' },
     vodka: { name: 'vodka', type: 'alcohol' },
-    milk: { name: 'milk', type: 'alcohol' },
-    soda: { name: 'soda', type: 'alcohol' },
+    milk: { name: 'milk', type: 'other' },
+    soda: { name: 'soda', type: 'other' },
 };
 
 type beer = { name: 'beer', type: 'alcohol' }
@@ -14,15 +14,18 @@ type soda = { name: 'soda', type: 'other' }
 
 type drink = beer | vodka | milk | soda;
 
-class Student extends Machine {
+class PartyMachine extends Machine {
     constructor() {
         super("Sober");
         this.transition('Sober');
     }
 
-    public data = {
-        drinksConsumed: 0,
-        drinksUntilDrunk: 2,
+    private data = {
+        drinksConsumed: 0
+    };
+
+    public rules = {
+        drinksUntilDrunk:  2,
         drinksUntilReallyDrunk: 4,
         drinksUntilThrowUp: 5,
         drinksUntilSleep: 6
@@ -37,7 +40,7 @@ class Student extends Machine {
             },
 
             drink: function (beverage: drink): void {
-                console.log('state:', this.state, '=> action: drink', beverage);
+                console.log('state:', this.state, '=> action: drink', beverage.name);
 
                 if (beverage.type === 'alcohol') {
                     this.data.drinksConsumed += 1;
@@ -48,7 +51,7 @@ class Student extends Machine {
 
                 console.log('\tdrinks consumed:', this.data.drinksConsumed);
 
-                if (this.data.drinksConsumed >= this.data.drinksUntilDrunk) {
+                if (this.data.drinksConsumed >= this.rules.drinksUntilDrunk) {
                     this.transition('Drunk');
                 }
             }
@@ -64,7 +67,7 @@ class Student extends Machine {
 
             drink: function(beverage: drink): void {
                 console.log('state:', this.state, '=> action: drink');
-                console.log('\taction:', 'drink', beverage);
+                console.log('\taction:', 'drink', beverage.name);
 
                 if (beverage.type === 'alcohol') {
                     this.data.drinksConsumed += 1;
@@ -75,7 +78,7 @@ class Student extends Machine {
 
                 console.log('\tdrinks consumed:', this.data.drinksConsumed);
 
-                if (this.data.drinksConsumed >= this.data.drinksUntilReallyDrunk) {
+                if (this.data.drinksConsumed >= this.rules.drinksUntilReallyDrunk) {
                     this.transition('ReallyDrunk');
                 }
             }
@@ -90,7 +93,7 @@ class Student extends Machine {
             },
 
             drink: function(beverage: drink): void {
-                console.log('state:', this.state, '=> action: drink', beverage);
+                console.log('state:', this.state, '=> action: drink', beverage.name);
                 console.log('\tNow I am REALLY drunk!');
 
                 if (beverage.type === 'alcohol') {
@@ -102,7 +105,7 @@ class Student extends Machine {
 
                 console.log('\tdrinks consumed:', this.data.drinksConsumed);
 
-                if (this.data.drinksConsumed >= this.data.drinksUntilThrowUp) {
+                if (this.data.drinksConsumed >= this.rules.drinksUntilThrowUp) {
                     this.transition('ThrowUp');
                 }
             }
@@ -117,7 +120,7 @@ class Student extends Machine {
             },
 
             drink: function(beverage: drink): void {
-                console.log('state:', this.state, '=> action: drink', beverage);
+                console.log('state:', this.state, '=> action: drink', beverage.name);
                 console.log('\tI am getting tired!');
 
                 if (beverage.type === 'alcohol') {
@@ -129,7 +132,7 @@ class Student extends Machine {
 
                 console.log('\tdrinks consumed:', this.data.drinksConsumed);
 
-                if (this.data.drinksConsumed >= this.data.drinksUntilSleep) {
+                if (this.data.drinksConsumed >= this.rules.drinksUntilSleep) {
                     this.transition('Sleeping');
                 }
             }
@@ -150,12 +153,16 @@ class Student extends Machine {
     }
 }
 
-const student = new Student();
-
+const student = new PartyMachine();
 student.dispatch('drink', [drinks.soda]);
 student.dispatch('drink', [drinks.beer]);
+student.dispatch('drink', [drinks.soda]);
+student.dispatch('drink', [drinks.vodka]);
 student.dispatch('drink', [drinks.beer]);
+student.dispatch('drink', [drinks.vodka]);
 student.dispatch('drink', [drinks.beer]);
+student.dispatch('drink', [drinks.soda]);
+student.dispatch('drink', [drinks.soda]);
 student.dispatch('drink', [drinks.beer]);
-student.dispatch('drink', [drinks.beer]);
-student.dispatch('drink', [drinks.beer]);
+
+// console.log(student);
