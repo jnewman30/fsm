@@ -16,7 +16,7 @@ export class Machine<Context,State,Action> {
         const action = actions[actionName as keyof object] as any;
 
         if (action) {
-            action.apply(this,  [this.context, ...payload]);
+            action.apply(this, [this, this.context, ...payload]);
         } else {
             //action is not valid for current state
         }
@@ -24,11 +24,11 @@ export class Machine<Context,State,Action> {
 
     public changeState(newState: State): void {
         this.state = newState;
-        this.dispatch('_onEnter', [this.context]);
+        this.dispatch('_onEnter', [this, this.context]);
     }
 
     public transition(newState: State, ...payload: any[]): void {
-        this.dispatch('_onExit', [this.context, ...payload]);
+        this.dispatch('_onExit', [this, this.context, ...payload]);
         this.changeState(newState);
     }
 }

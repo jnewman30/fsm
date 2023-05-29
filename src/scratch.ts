@@ -65,23 +65,21 @@ class PartyMachine extends Machine<PartyContext, PartyStateType, PartyActionType
 
     public states = {
         Sober: {
-            ...this,
-
             // You can also add intrinsic action _onExit...
-            _onEnter: function (context: PartyContext) {
-                console.log('* Enter State:', this.state);
+            _onEnter: function (machine: PartyMachine, context: PartyContext) {
+                console.log('* Enter State:', machine.state);
                 context.reset();
                 context.report();
             },
 
-            Drink: function (context: PartyContext, beverage: BeverageType) {
+            Drink: function (machine: PartyMachine, context: PartyContext, beverage: BeverageType) {
                 if (context.isAlcohol(beverage)) {
 
                     context.spiritsConsumed += 1;
                     console.log(`\tsay "${beverage} down the hatch!"`);
 
                     if (context.isDrunk()) {
-                        this.transition(PartyState.Drunk);
+                        machine.transition(PartyState.Drunk);
                     }
                 } else {
                     console.log(`\tsay "That ${beverage} was refreshing!"`);
@@ -91,22 +89,20 @@ class PartyMachine extends Machine<PartyContext, PartyStateType, PartyActionType
         },
 
         Drunk: {
-            ...this,
-
-            _onEnter: function (context: PartyContext) {
-                console.log('* Enter State:', this.state);
+            _onEnter: function (machine: PartyMachine, context: PartyContext) {
+                console.log('* Enter State:', machine.state);
                 context.report();
                 console.log(`\tsay "Goodbye inhibitions!"`);
             },
 
-            Drink: function (context: PartyContext, beverage: BeverageType) {
+            Drink: function (machine: PartyMachine, context: PartyContext, beverage: BeverageType) {
                 if (context.isAlcohol(beverage)) {
 
                     context.spiritsConsumed += 1;
                     console.log(`\tsay "${beverage} down the hatch!"`);
 
                     if (context.isReallyDrunk()) {
-                        this.transition(PartyState.ReallyDrunk);
+                        machine.transition(PartyState.ReallyDrunk);
                     }
                 } else {
                     console.log(`\tsay "That ${beverage} was refreshing!"`);
@@ -115,22 +111,20 @@ class PartyMachine extends Machine<PartyContext, PartyStateType, PartyActionType
         },
 
         ReallyDrunk: {
-            ...this,
-
-            _onEnter: function (context: PartyContext) {
-                console.log('* Enter State:', this.state);
+            _onEnter: function (machine: PartyMachine, context: PartyContext) {
+                console.log('* Enter State:', machine.state);
                 context.report();
                 console.log(`\tsay "Hey Room, stop spinning!"`);
             },
 
-            Drink: function (context: PartyContext, beverage: BeverageType) {
+            Drink: function (machine: PartyMachine, context: PartyContext, beverage: BeverageType) {
                 if (context.isAlcohol(beverage)) {
 
                     context.spiritsConsumed += 1;
                     console.log(`\tsay "${beverage} down the hatch!"`);
 
                     if (context.isSick()) {
-                        this.transition(PartyState.Sick);
+                        machine.transition(PartyState.Sick);
                     }
                 } else {
                     console.log(`\tsay "That ${beverage} was refreshing!"`);
@@ -139,27 +133,23 @@ class PartyMachine extends Machine<PartyContext, PartyStateType, PartyActionType
         },
 
         Sick: {
-            ...this,
-
-            _onEnter: function (context: PartyContext) {
-                console.log('* Enter State:', this.state);
+            _onEnter: function (machine: PartyMachine, context: PartyContext) {
+                console.log('* Enter State:', machine.state);
                 context.report();
                 console.log(`\tsay "Dang! I spewed chunks!"`);
 
-                this.dispatch(PartyAction.Sleep);
+                machine.dispatch(PartyAction.Sleep);
             },
 
-            Sleep: function () {
+            Sleep: function (machine: PartyMachine) {
                 console.log('\tsay "Too tired to party. Time to sleep."');
-                this.transition(PartyState.Sleeping);
+                machine.transition(PartyState.Sleeping);
             }
         },
 
         Sleeping: {
-            ...this,
-
-            _onEnter: function (context: PartyContext) {
-                console.log('* Enter State:', this.state);
+            _onEnter: function (machine: PartyMachine, context: PartyContext) {
+                console.log('* Enter State:', machine.state);
                 context.report();
                 console.log('\tZzZzzZZZzzZzz...');
             }
