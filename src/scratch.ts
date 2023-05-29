@@ -1,85 +1,115 @@
-import {Machine} from "./fsm/machine";
+import {Machine} from "./fsm";
 
-const drinks = {
-    beer: { name: 'beer', type: 'alcohol' },
-    vodka: { name: 'vodka', type: 'alcohol' },
-    milk: { name: 'milk', type: 'other' },
-    soda: { name: 'soda', type: 'other' },
-};
+enum PartyState {
+    Sober = 'Sober',
+    Drunk = 'Drunk',
+    ReallyDrunk = 'ReallyDrunk',
+    Sick = 'Sick',
+    Sleeping = 'Sleeping'
+}
 
-type beer = { name: 'beer', type: 'alcohol' }
-type vodka = { name: 'vodka', type: 'alcohol' }
-type milk = { name: 'milk', type: 'other' }
-type soda = { name: 'soda', type: 'other' }
+enum PartyAction {
+    Drink = 'Drink',
+    Sleep = 'Sleep'
+}
 
-type drink = beer | vodka | milk | soda;
+enum Beverage {
+    Beer = 'Beer',
+    Vodka = 'Vodka',
+    Soda = 'Soda'
+}
 
-class PartyMachine extends Machine {
-    constructor() {
-        super("Sober");
-        this.transition('Sober');
+type PartyStateType = PartyState.Sober | PartyState.Drunk | PartyState.ReallyDrunk | PartyState.Sick | PartyState.Sleeping;
+type PartyActionType = PartyAction.Drink | PartyAction.Sleep;
+type BeverageType = Beverage.Beer | Beverage.Vodka | Beverage.Soda;
+
+class PartyContext {
+    public readonly alcohol: BeverageType[] = [ Beverage.Beer, Beverage.Vodka ];
+    public readonly spiritsBeforeDrunk = 4;
+    public readonly spiritsBeforeReallyDrunk = 5;
+    public readonly spiritsBeforeSick = 6;
+
+    public spiritsConsumed = 0;
+
+    public reset(): void {
+        this.spiritsConsumed = 0;
     }
 
-    private data = {
-        drinksConsumed: 0
-    };
+    public isAlcohol(beverage: BeverageType): boolean {
+        return this.alcohol.some(o => o === beverage);
+    }
 
-    public rules = {
-        drinksUntilDrunk:  2,
-        drinksUntilReallyDrunk: 4,
-        drinksUntilThrowUp: 5,
-        drinksUntilSleep: 6
-    };
+    public isDrunk(): boolean {
+        return this.spiritsConsumed >= this.spiritsBeforeDrunk;
+    }
+
+    public isReallyDrunk(): boolean {
+        return this.spiritsConsumed >= this.spiritsBeforeReallyDrunk;
+    }
+
+    public isSick(): boolean {
+        return this.spiritsConsumed >= this.spiritsBeforeSick;
+    }
+
+    public report(): void {
+        console.log('\t// Spirits Consumed:', this.spiritsConsumed);
+    }
+}
+
+class PartyMachine extends Machine<PartyContext, PartyStateType, PartyActionType> {
+
+    constructor() {
+        super(new PartyContext(), PartyState.Sober);
+        this.transition(PartyState.Sober);
+    }
 
     public states = {
         Sober: {
             ...this,
 
-            _onEnter: function(): void {
-                this.data.drinksConsumed = 0;
+            // You can also add intrinsic action _onExit...
+            _onEnter: function (context: PartyContext) {
+                console.log('* Enter State:', this.state);
+                context.reset();
+                context.report();
             },
 
-            drink: function (beverage: drink): void {
-                console.log('state:', this.state, '=> action: drink', beverage.name);
+            Drink: function (context: PartyContext, beverage: BeverageType) {
+                if (context.isAlcohol(beverage)) {
 
-                if (beverage.type === 'alcohol') {
-                    this.data.drinksConsumed += 1;
-                    console.log('\tAdios inhibitions!');
+                    context.spiritsConsumed += 1;
+                    console.log(`\tsay "${beverage} down the hatch!"`);
+
+                    if (context.isDrunk()) {
+                        this.transition(PartyState.Drunk);
+                    }
                 } else {
-                    console.log('\tThat was refreshing!');
+                    console.log(`\tsay "That ${beverage} was refreshing!"`);
                 }
+            },
 
-                console.log('\tdrinks consumed:', this.data.drinksConsumed);
-
-                if (this.data.drinksConsumed >= this.rules.drinksUntilDrunk) {
-                    this.transition('Drunk');
-                }
-            }
         },
 
         Drunk: {
             ...this,
 
-            _onEnter: function(): void {
-                console.log('state:', this.state, '=> action: _onEnter');
-                console.log('\tI am drunk now!');
+            _onEnter: function (context: PartyContext) {
+                console.log('* Enter State:', this.state);
+                context.report();
+                console.log(`\tsay "Goodbye inhibitions!"`);
             },
 
-            drink: function(beverage: drink): void {
-                console.log('state:', this.state, '=> action: drink');
-                console.log('\taction:', 'drink', beverage.name);
+            Drink: function (context: PartyContext, beverage: BeverageType) {
+                if (context.isAlcohol(beverage)) {
 
-                if (beverage.type === 'alcohol') {
-                    this.data.drinksConsumed += 1;
-                    console.log('\tDown the hatch!');
+                    context.spiritsConsumed += 1;
+                    console.log(`\tsay "${beverage} down the hatch!"`);
+
+                    if (context.isReallyDrunk()) {
+                        this.transition(PartyState.ReallyDrunk);
+                    }
                 } else {
-                    console.log('\tThat was refreshing!');
-                }
-
-                console.log('\tdrinks consumed:', this.data.drinksConsumed);
-
-                if (this.data.drinksConsumed >= this.rules.drinksUntilReallyDrunk) {
-                    this.transition('ReallyDrunk');
+                    console.log(`\tsay "That ${beverage} was refreshing!"`);
                 }
             }
         },
@@ -87,82 +117,67 @@ class PartyMachine extends Machine {
         ReallyDrunk: {
             ...this,
 
-            _onEnter: function(): void {
-                console.log('state:', this.state, '=> action: _onEnter');
-                console.log('\tNow I am REALLY drunk!');
+            _onEnter: function (context: PartyContext) {
+                console.log('* Enter State:', this.state);
+                context.report();
+                console.log(`\tsay "Hey Room, stop spinning!"`);
             },
 
-            drink: function(beverage: drink): void {
-                console.log('state:', this.state, '=> action: drink', beverage.name);
-                console.log('\tNow I am REALLY drunk!');
+            Drink: function (context: PartyContext, beverage: BeverageType) {
+                if (context.isAlcohol(beverage)) {
 
-                if (beverage.type === 'alcohol') {
-                    this.data.drinksConsumed += 1;
-                    console.log('\tNo more!');
+                    context.spiritsConsumed += 1;
+                    console.log(`\tsay "${beverage} down the hatch!"`);
+
+                    if (context.isSick()) {
+                        this.transition(PartyState.Sick);
+                    }
                 } else {
-                    console.log('\tThat was refreshing!');
-                }
-
-                console.log('\tdrinks consumed:', this.data.drinksConsumed);
-
-                if (this.data.drinksConsumed >= this.rules.drinksUntilThrowUp) {
-                    this.transition('ThrowUp');
+                    console.log(`\tsay "That ${beverage} was refreshing!"`);
                 }
             }
         },
 
-        ThrowUp: {
+        Sick: {
             ...this,
 
-            _onEnter: function(): void {
-                console.log('state:', this.state, '=> action: _onEnter');
-                console.log('\tDang! I spewed chunks!');
+            _onEnter: function (context: PartyContext) {
+                console.log('* Enter State:', this.state);
+                context.report();
+                console.log(`\tsay "Dang! I spewed chunks!"`);
+
+                this.dispatch(PartyAction.Sleep);
             },
 
-            drink: function(beverage: drink): void {
-                console.log('state:', this.state, '=> action: drink', beverage.name);
-                console.log('\tI am getting tired!');
-
-                if (beverage.type === 'alcohol') {
-                    this.data.drinksConsumed += 1;
-                    console.log('\tNo more!');
-                } else {
-                    console.log('\tThat was refreshing!');
-                }
-
-                console.log('\tdrinks consumed:', this.data.drinksConsumed);
-
-                if (this.data.drinksConsumed >= this.rules.drinksUntilSleep) {
-                    this.transition('Sleeping');
-                }
+            Sleep: function () {
+                console.log('\tsay "Too tired to party. Time to sleep."');
+                this.transition(PartyState.Sleeping);
             }
         },
 
         Sleeping: {
             ...this,
 
-            _onEnter: function(): void {
-                console.log('state:', this.state, '=> action: _onEnter');
-                console.log('\tzzzzzzz....');
-            },
-        },
-
-        HungOver: {
-            ...this,
+            _onEnter: function (context: PartyContext) {
+                console.log('* Enter State:', this.state);
+                context.report();
+                console.log('\tZzZzzZZZzzZzz...');
+            }
         }
     }
 }
 
-const student = new PartyMachine();
-student.dispatch('drink', [drinks.soda]);
-student.dispatch('drink', [drinks.beer]);
-student.dispatch('drink', [drinks.soda]);
-student.dispatch('drink', [drinks.vodka]);
-student.dispatch('drink', [drinks.beer]);
-student.dispatch('drink', [drinks.vodka]);
-student.dispatch('drink', [drinks.beer]);
-student.dispatch('drink', [drinks.soda]);
-student.dispatch('drink', [drinks.soda]);
-student.dispatch('drink', [drinks.beer]);
+const party = new PartyMachine();
+party.dispatch(PartyAction.Drink, Beverage.Soda);
+party.dispatch(PartyAction.Drink, Beverage.Vodka);
+party.dispatch(PartyAction.Drink, Beverage.Beer);
+party.dispatch(PartyAction.Drink, Beverage.Soda);
+party.dispatch(PartyAction.Drink, Beverage.Soda);
+party.dispatch(PartyAction.Drink, Beverage.Vodka);
+party.dispatch(PartyAction.Drink, Beverage.Beer);
+party.dispatch(PartyAction.Drink, Beverage.Beer);
+party.dispatch(PartyAction.Drink, Beverage.Soda);
+party.dispatch(PartyAction.Drink, Beverage.Vodka);
 
-// console.log(student);
+console.log('\r\nRun Completed.');
+console.log('Spirits Consumed = ', party.context.spiritsConsumed);
