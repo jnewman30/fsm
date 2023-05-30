@@ -1,5 +1,10 @@
 
-type InternalAction = '_onEnter' | '_onExit';
+enum InternalActionType {
+    OnEnter = '_onEnter',
+    OnExit = '_onExit'
+}
+
+type InternalAction = InternalActionType.OnEnter | InternalActionType.OnExit;
 
 export class Machine<Context,State,Action> {
 
@@ -24,11 +29,11 @@ export class Machine<Context,State,Action> {
 
     public changeState(newState: State): void {
         this.state = newState;
-        this.dispatch('_onEnter', [this, this.context]);
+        this.dispatch(InternalActionType.OnEnter, [this, this.context]);
     }
 
     public transition(newState: State, ...payload: any[]): void {
-        this.dispatch('_onExit', [this, this.context, ...payload]);
+        this.dispatch(InternalActionType.OnExit, [this, this.context, ...payload]);
         this.changeState(newState);
     }
 }
