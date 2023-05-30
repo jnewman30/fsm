@@ -16,7 +16,7 @@ export class PartyMachine extends Machine<PartyContext, PartyStateType, PartyAct
 }
 ```
 
-See the [Sample Code]([/src/fsm/samples/party-machine/party.machine.ts) for more detail:
+See the [Sample Code](/src/fsm/samples/party-machine/party.machine.ts) for more detail:
 
 Setup your state machine:
 ```typescript
